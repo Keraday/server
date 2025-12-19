@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"net/http"
 	"os"
+	"server/database"
 	"server/handlers"
 	"server/logger"
 	"time"
@@ -13,10 +15,20 @@ import (
 func main() {
 	var debug bool
 	var port string
-	flag.BoolVar(&debug, "debug", false, "enable debug mode(default INFO)")
+	flag.BoolVar(&debug, "debug", true, "enable debug mode(default INFO)")
 	flag.StringVar(&port, "port", "8080", "on which port to run the server")
+	flag.StringVar(&database.Cfg.DbName, "postgres", "", "login postgres")
+	flag.StringVar(&database.Cfg.Password, "password", "", "password postgres ")
+	flag.StringVar(&database.Cfg.URL, "url", "localhost", "uri postgres")
+	flag.StringVar(&database.Cfg.Port, "db-port", "5432", "on which port to run the DB")
+
 	flag.Parse()
+
 	logger.Init(debug, os.Stdout)
+
+	ctx := context.TODO()
+
+	database.NewPool(ctx)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.Handler1)
