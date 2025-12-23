@@ -28,22 +28,20 @@ func (c *DbConfig) getConfig() string {
 	if c.URL == "" {
 		c.URL = "localhost"
 	}
-	//postgresql://[user[:password]@][host][:port][/dbname][?options]
+	// postgresql://[user[:password]@][host][:port][/dbname][?options]
 	strconnect := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s",
 		c.User,
 		c.Password,
 		c.URL,
 		c.Port,
 		c.DbName)
-	fmt.Println(strconnect)
+
 	slog.Debug(strconnect)
 	return strconnect
 }
 
 func NewPool(ctx context.Context) (*pgxpool.Pool, error) {
-
 	pool, err := pgxpool.New(ctx, Cfg.getConfig())
-
 	if err != nil {
 		slog.Debug("error pgxpool.New")
 		return nil, err
@@ -53,5 +51,4 @@ func NewPool(ctx context.Context) (*pgxpool.Pool, error) {
 	}
 
 	return pool, err
-
 }

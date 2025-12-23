@@ -28,7 +28,10 @@ func main() {
 
 	ctx := context.TODO()
 
-	database.NewPool(ctx)
+	db, err := database.NewPool(ctx)
+	if err != nil {
+		os.Exit(1)
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.Handler1)
