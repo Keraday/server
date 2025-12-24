@@ -32,7 +32,10 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-
+	err = db.Ping(ctx)
+	if err != nil {
+		slog.Error("error", "ping", err)
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.Handler1)
 
