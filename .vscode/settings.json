@@ -1,7 +1,0 @@
-{
-    "commentTranslate.targetLanguage": "ru",
-    "go.diagnostic.vulncheck": "Imports",
-    "yaml.schemas": {
-        "swaggerviewer:openapi": "file:///c%3A/Users/kero-/go/src/server/swagger.yaml"
-    }
-}
