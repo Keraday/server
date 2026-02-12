@@ -1,0 +1,336 @@
+openapi: 3.0.3
+info:
+  title: Subscriptions API
+  description: | 
+    REST API for managing user subscriptions.
+    
+    Features:
+      - Basic CRUDL operations for subscriptions
+      - Validation of overlapping periods
+      - Total cost calculating with filters
+  version: 0.1.0
+  contact:
+    name: API support
+    url: https://t.me/Keroday
+    email: keraday@yandex.ru
+
+servers:
+  - url: https://localhost:8080
+    description: Local development server
+
+x-42c-no-authentication: true
+
+tags:
+  - name: subscriptions
+    description: Operations with subscriptions
+
+paths:
+  /subscriptions:
+    post:
+      tags:
+        - subscriptions
+      summary: Create a new subscription
+      description: |
+        - Creates a subscription for a user. 
+        - Validates that the period does not overlap with existing subscriptions 
+        for the same user and service.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionsCreate'
+      responses: 
+        '201':
+          description: Subscription created successfully
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          description: Invalid request (missing fields, invalid format, negative price)
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Subscription period overlaps with existing one
+          content: 
+             application/json: 
+               schema: 
+                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+
+  /subscriptions/{id}:
+    get:
+      tags:
+        - subscriptions
+      summary: Get subscription by ID
+      parameters: 
+        - name: id
+          in: path
+          required: true
+          schema: 
+            type: string
+            format: uuid
+          description: Subscription UUID
+      responses: 
+        '200':
+          description: Subscription found
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          description: Invalid ID format
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Subscription not found
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    patch: 
+      tags: 
+        - subscriptions
+      summary: Update subscription
+      description:  |
+        Update subscription price and/or end_date.
+        Cannot change user_id, service_name, or start_date.
+      parameters: 
+        - name: id
+          in: path
+          required: true
+          schema: 
+            type: string
+            format: uuid
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/SubscriptionUpdate'
+      responses: 
+        '200':
+          description:  Subscription updated successfully
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          description: Invalid request
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Subscription not found
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: 
+        - subscriptions
+      summary: Delete subscription
+      parameters: 
+        - name: id
+          in: path
+          required: true
+          schema: 
+            type: string
+            format: uuid
+      responses: 
+        '204':
+          description: Subscription deleted successfully
+        '400':
+          description: Invalid ID format
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Subscription not found
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+
+  /subscriptions/total:
+    get:
+      tags: 
+        - subscriptions
+      summary: Calculate total cost of user subscriptions
+      description: Calculate sum of all active subscriptions for a user in the specified period.
+      parameters: 
+        - name: user_id
+          in: query
+          required: true
+          schema: 
+            type: string
+            format: uuid
+          description: User uuid
+        - name: service_name
+          in: query
+          required: false
+          schema: 
+            type: string
+          description: Filter by service name (optional)
+        - name: from
+          in: query
+          required: true
+          schema: 
+            type: string
+            pattern: '^\\d{2}-\\d{4}$'
+          description: Start of period (MM-YYYY), inclusive
+        - name: to
+          in: query
+          required: false
+          schema: 
+            type: string
+            pattern: '^\\d{2}-\\d{4}$'
+          description: End of period (MM-YYYY), exclusive. Defaults to current month.
+      responses: 
+        '200':
+          description: Total calculated successfully
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/TotalResponse'
+        '400':
+          description: Invalid parameters (missing user_id, invalid date format, from >= to)
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        
+
+
+components:
+  schemas:
+    Subscription:
+      type: object
+      required:
+        - id
+        - service_name
+        - price
+        - user_id
+        - start_date
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+        service_name:
+          type: string
+          example: "Yandex Plus"
+        price:
+          type: integer
+          minimum: 0
+          example: 400
+        user_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        start_date:
+          type: string
+          pattern: '^\\d{2}-\\d{4}$'
+          example: "01-2025"
+        end_date:
+          type: string
+          pattern: '^\\d{2}-\\d{4}$'
+          nullable: true
+          example: "03-2025"
+    
+    SubscriptionsCreate:
+      type: object
+      required: 
+        - service_name
+        - price
+        - user_id
+        - start_date
+      properties: 
+        service_name:
+          type: string
+          example: "Yandex Plus"
+        price:
+          type: integer
+          minimum: 0
+          example: 400
+        user_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        start_date:
+          type: string
+          pattern: '^\\d{2}-\\d{4}$'
+          example: "01-2025"
+        end_date:
+          type: string
+          pattern: '^\\d{2}-\\d{4}$'
+          nullable: true
+          example: "03-2025"
+
+    SubscriptionUpdate:
+      type: object
+      properties: 
+        price:
+          type: integer
+          minimum: 0
+          example: 400
+        end_date:
+          type: string
+          pattern: '^\\d{2}-\\d{4}$'
+          nullable: true
+          example: "04-2025"
+
+    TotalResponse:
+      type: object
+      required: 
+        - total
+      properties: 
+        total:
+          type: integer
+          description: Total cost in rubles
+          example: 1200
+
+    Error:
+      type: object
+      required: 
+        - error
+      properties: 
+        error:
+          type: string
+          example: "subscription period overlaps with existing one"

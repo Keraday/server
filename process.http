@@ -1,0 +1,54 @@
+GET http://192.168.1.253:8080/subscriptions HTTP/1.1
+
+### end_date - null
+POST http://localhost:8080/subscriptions HTTP/1.1
+content-type: application/json
+
+{
+"service_name": "Yandex Plus",
+"price": 400,
+"user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
+"start_date": "06-2025"
+}
+
+### create full 
+POST http://localhost:8080/subscriptions HTTP/1.1
+content-type: application/json
+
+{
+"service_name": "Yandex Plus",
+"price": 400,
+"user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
+"start_date": "02-2025",
+"end_date": "05-2025"
+}
+###
+
+POST http://localhost:8080/subscriptions HTTP/1.1
+content-type: application/json
+
+{
+"service_name": "Goolge Plus",
+"price": 400,
+"user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
+"start_date": "02-2025",
+"end_date": "05-2025"
+}
+
+### DELETE ID
+
+DELETE http://localhost:8080/subscriptions/6349cc0e-d832-4a94-9075-f17da8779d1f HTTP/1.1
+
+#### GET ID
+GET http://localhost:8080/subscriptions/cbfa6654-1a99-4432-98a7-f7bfc460f0de HTTP/1.1
+### PUT ID
+PUT http://localhost:8080/subscriptions/cbfa6654-1a99-4432-98a7-f7bfc460f0de HTTP/1.1
+content-type: application/json
+
+{
+"price": 2000
+
+}
+###
+
+GET  http://localhost:8080/subscriptions/total?user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba&from=06-2025&to=05-2025

@@ -5,19 +5,30 @@ import (
 	"log/slog"
 )
 
-var lvl = &slog.LevelVar{}
+func New(loglvlstr string, isProd bool, w io.Writer) *slog.Logger {
+	var handler slog.Handler
+	lvl := parseLogLevel(loglvlstr)
 
-func Init(debug bool, out io.Writer) {
-	if debug {
-		lvl.Set(slog.LevelDebug)
+	if isProd {
+		handler = slog.NewJSONHandler(w, &slog.HandlerOptions{Level: lvl, AddSource: !isProd})
 	} else {
-		lvl.Set(slog.LevelInfo)
+		handler = slog.NewTextHandler(w, &slog.HandlerOptions{Level: lvl, AddSource: !isProd})
 	}
-	handler := slog.NewTextHandler(out, &slog.HandlerOptions{
-		Level: lvl,
-		// TODO изменить формат
-	})
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
-	slog.Debug("Debug mode")
+
+	return slog.New(handler)
+}
+
+func parseLogLevel(lvl string) slog.Level {
+	switch lvl {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "error":
+		return slog.LevelError
+	case "warn", "warning":
+		return slog.LevelWarn
+	default:
+		return slog.LevelInfo
+	}
 }

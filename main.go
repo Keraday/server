@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"flag"
-	"log/slog"
 	"net/http"
 	"os"
+	"server/config"
 	"server/database"
 	"server/handlers"
 	"server/logger"
@@ -13,42 +12,42 @@ import (
 )
 
 func main() {
-	var debug bool
-	var port string
-	flag.BoolVar(&debug, "debug", true, "enable debug mode(default INFO)")
-	flag.StringVar(&port, "port", "8080", "on which port to run the server")
-	flag.StringVar(&database.Cfg.DbName, "postgres", "", "login postgres")
-	flag.StringVar(&database.Cfg.Password, "password", "", "password postgres ")
-	flag.StringVar(&database.Cfg.URL, "url", "localhost", "uri postgres")
-	flag.StringVar(&database.Cfg.Port, "db-port", "5432", "on which port to run the DB")
+	cfg := config.Config()
 
-	flag.Parse()
-
-	logger.Init(debug, os.Stdout)
-
-	ctx := context.TODO()
-
-	db, err := database.NewPool(ctx)
+	log := logger.New(cfg.LogLvl, cfg.ENV == "prod", os.Stdout)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	dbPool, err := database.NewPool(ctx, cfg.DBURL, log)
 	if err != nil {
+		log.Error("connection to the database could not be established", "error", err)
 		os.Exit(1)
 	}
-	err = db.Ping(ctx)
-	if err != nil {
-		slog.Error("error", "ping", err)
+	defer dbPool.Close()
+
+	app := handlers.SubscriptionHandler{
+		DB:  dbPool,
+		Log: log,
 	}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", handlers.Handler1)
+
+	mux.HandleFunc("POST /subscriptions", app.Create)
+	mux.HandleFunc("GET /subscriptions/{id}", app.GetByID)
+	mux.HandleFunc("DELETE /subscriptions/{id}", app.Delete)
+	mux.HandleFunc("PUT /subscriptions/{id}", app.Update)
+	mux.HandleFunc("GET /subscriptions/total", app.GetTotal)
 
 	serv := &http.Server{
-		Addr:         "localhost:" + port,
+		Addr:         cfg.ServAddr,
 		Handler:      mux,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 6 * time.Second,
 		IdleTimeout:  20 * time.Second,
 	}
-	slog.Info("Server UP")
+	log.Debug("Config Set: ", "ENV:", cfg.ENV, "DB_URL:", cfg.DBURL, "Log_Lvl:", cfg.LogLvl, "SERV_ADDR:", cfg.ServAddr)
+	log.Info("Server UP")
 	if err := serv.ListenAndServe(); err != nil {
-		slog.Error("error start server ", slog.Any("error", err))
+		log.Error("error start server ", "error", err)
 		os.Exit(1)
 	}
 }
