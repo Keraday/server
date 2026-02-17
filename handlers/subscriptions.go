@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -33,7 +34,7 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, &sub)
 	if err != nil {
 		h.Log.Warn("failed to unmarshal r.Body", slog.Any("error", err))
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("invalid JSON: %v", err), http.StatusBadRequest)
 		return
 	}
 	if sub.ServiceName == "" {

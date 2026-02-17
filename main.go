@@ -34,7 +34,7 @@ func main() {
 	mux.HandleFunc("POST /subscriptions", app.Create)
 	mux.HandleFunc("GET /subscriptions/{id}", app.GetByID)
 	mux.HandleFunc("DELETE /subscriptions/{id}", app.Delete)
-	mux.HandleFunc("PUT /subscriptions/{id}", app.Update)
+	mux.HandleFunc("PATCH /subscriptions/{id}", app.Update)
 	mux.HandleFunc("GET /subscriptions/total", app.GetTotal)
 
 	serv := &http.Server{
@@ -44,6 +44,7 @@ func main() {
 		WriteTimeout: 6 * time.Second,
 		IdleTimeout:  20 * time.Second,
 	}
+	// TODO delete pass form dburl
 	log.Debug("Config Set: ", "ENV:", cfg.ENV, "DB_URL:", cfg.DBURL, "Log_Lvl:", cfg.LogLvl, "SERV_ADDR:", cfg.ServAddr)
 	log.Info("Server UP")
 	if err := serv.ListenAndServe(); err != nil {
