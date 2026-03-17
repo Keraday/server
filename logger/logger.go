@@ -3,6 +3,7 @@ package logger
 import (
 	"io"
 	"log/slog"
+	"strings"
 )
 
 func New(loglvlstr string, isProd bool, w io.Writer) *slog.Logger {
@@ -19,7 +20,7 @@ func New(loglvlstr string, isProd bool, w io.Writer) *slog.Logger {
 }
 
 func parseLogLevel(lvl string) slog.Level {
-	switch lvl {
+	switch strings.ToLower(lvl) {
 	case "debug":
 		return slog.LevelDebug
 	case "info":
